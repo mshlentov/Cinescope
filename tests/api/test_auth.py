@@ -50,6 +50,25 @@ class TestAuthAPI:
         assert "email" in user_data, "Поле 'email' отсутствует в объекте 'user'"
         assert user_data["email"] == login_data["email"], f"Email не совпадает. Ожидалось: '{login_data["email"]}', Получено: '{user_data['email']}'"
 
+    def test_negative_login_empty(self):
+        # URL для авторизации
+        login_url = f"{BASE_URL}{LOGIN_ENDPOINT}"
+
+        # Отправка запроса на авторизацию
+        response = requests.post(login_url, headers=HEADERS)
+
+        # Тело ответа
+        response_data = response.json()
+
+        # Логируем ответ для диагностики
+        print(f"Response status: {response.status_code}")
+        print(f"Response body: {response.text}")
+
+        # Проверки
+        assert response.status_code == 401, "Ошибка валидации на отсутствие тела запроса при авторизации"
+        assert response_data["message"] == "Неверный логин или пароль"
+
+
 
 
 
