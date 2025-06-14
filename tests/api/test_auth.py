@@ -4,69 +4,105 @@ from constants import BASE_URL, HEADERS, REGISTER_ENDPOINT, LOGIN_ENDPOINT
 
 
 class TestAuthAPI:
-    def test_register_user(self, test_user):
-        # URL для регистрации
-        register_url = f"{BASE_URL}{REGISTER_ENDPOINT}"
-
-        # Отправка запроса на регистрацию
-        response = requests.post(register_url, json=test_user, headers=HEADERS)
-
-        # Логируем ответ для диагностики
-        print(f"Response status: {response.status_code}")
-        print(f"Response body: {response.text}")
-
-        # Проверки
-        assert response.status_code == 201, "Ошибка регистрации пользователя"
+    def test_register_user(self, requester, test_user):
+        """
+        Тест на регистрацию пользователя.
+        """
+        response = requester.send_request(
+            method="POST",
+            endpoint=REGISTER_ENDPOINT,
+            data=test_user,
+            expected_status=201
+        )
         response_data = response.json()
         assert response_data["email"] == test_user["email"], "Email не совпадает"
         assert "id" in response_data, "ID пользователя отсутствует в ответе"
         assert "roles" in response_data, "Роли пользователя отсутствуют в ответе"
-
-        # Проверяем, что роль USER назначена по умолчанию
         assert "USER" in response_data["roles"], "Роль USER должна быть у пользователя"
 
-    def test_login_user(self, test_user):
-        # URL для авторизации
-        login_url = f"{BASE_URL}{LOGIN_ENDPOINT}"
-
+    def test_register_and_login_user(self, requester, registered_user):
+        """
+        Тест на регистрацию и авторизацию пользователя.
+        """
         login_data = {
-            "email": test_user["email"],
-            "password": test_user["password"]
+            "email": registered_user["email"],
+            "password": registered_user["password"]
         }
-
-        # Отправка запроса на авторизацию
-        response = requests.post(login_url, json=login_data, headers=HEADERS)
-
-        # Логируем ответ для диагностики
-        print(f"Response status: {response.status_code}")
-        print(f"Response body: {response.text}")
-
-        # Проверки
-        assert response.status_code == 200, "Ошибка авторизации"
+        response = requester.send_request(
+            method="POST",
+            endpoint=LOGIN_ENDPOINT,
+            data=login_data,
+            expected_status=200
+        )
         response_data = response.json()
-        assert "accessToken" in response_data, "Токен отсутствует в ответе"
-        assert "user" in response_data, "Поле 'user' отсутствует в ответе"
-        user_data = response_data["user"]
-        assert "email" in user_data, "Поле 'email' отсутствует в объекте 'user'"
-        assert user_data["email"] == login_data["email"], f"Email не совпадает. Ожидалось: '{login_data["email"]}', Получено: '{user_data['email']}'"
+        assert "accessToken" in response_data, "Токен доступа отсутствует в ответе"
+        assert response_data["user"]["email"] == registered_user["email"], "Email не совпадает"
 
-    def test_negative_login_empty(self):
-        # URL для авторизации
-        login_url = f"{BASE_URL}{LOGIN_ENDPOINT}"
+    def test_negative_login_empty(self, requester):
+
+        login_data = {}
 
         # Отправка запроса на авторизацию
-        response = requests.post(login_url, headers=HEADERS)
+        response = requester.send_request(
+            method="POST",
+            endpoint=LOGIN_ENDPOINT,
+            data=login_data,
+            expected_status=401
+        )
 
         # Тело ответа
         response_data = response.json()
 
-        # Логируем ответ для диагностики
-        print(f"Response status: {response.status_code}")
-        print(f"Response body: {response.text}")
+        # Проверки
+        assert response_data["message"] == "Неверный логин или пароль"
+
+    def test_negative_login_email(self, requester):
+
+        login_data = {
+            "email": "123@lolipop.com",
+            "password": "123"
+        }
+
+        # Отправка запроса на авторизацию
+        response = requester.send_request(
+            method="POST",
+            endpoint=LOGIN_ENDPOINT,
+            data=login_data,
+            expected_status=401
+        )
+
+        # Тело ответа
+        response_data = response.json()
 
         # Проверки
-        assert response.status_code == 401, "Ошибка валидации на отсутствие тела запроса при авторизации"
         assert response_data["message"] == "Неверный логин или пароль"
+
+    def test_negative_login_invalid_password(self, registered_user, requester):
+
+        # Тестовые данные с неверным паролем
+        login_data = {
+            "email": registered_user["email"],
+            "password": "Неверный пароль"
+        }
+
+        # Отправка запроса на авторизацию
+        response = requester.send_request(
+            method="POST",
+            endpoint=LOGIN_ENDPOINT,
+            data=login_data,
+            expected_status=401
+        )
+
+        # Тело ответа
+        response_data = response.json()
+
+        # Проверки
+        assert response_data["message"] == "Неверный логин или пароль"
+
+
+
+
+
 
 
 
