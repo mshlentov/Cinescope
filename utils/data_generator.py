@@ -42,3 +42,11 @@ class DataGenerator:
         random.shuffle(password)
 
         return ''.join(password)
+
+    @staticmethod
+    def generate_random_movie_name():
+        return faker.text()
+
+    @staticmethod
+    def generate_random_desc_name():
+        return faker.text()

@@ -68,3 +68,21 @@ def api_manager(session):
     Фикстура для создания экземпляра ApiManager.
     """
     return ApiManager(session)
+
+@pytest.fixture(scope="session")
+def test_movie():
+    """
+    Генерация случайного фильма для тестов.
+    """
+    random_name = DataGenerator.generate_random_movie_name()
+    random_desc = DataGenerator.generate_random_movie_name()
+
+    return {
+        "name": random_name,
+        "imageUrl": "https://static.rustore.ru/apk/2063541706/content/ICON/b35776fc-d52d-4294-a521-ac41f44d84bb.png",
+        "price": 200,
+        "description": random_desc,
+        "location": "SPB",
+        "published": True,
+        "genreId": 2
+    }
