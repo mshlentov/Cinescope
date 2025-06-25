@@ -50,3 +50,11 @@ class DataGenerator:
     @staticmethod
     def generate_random_desc_name():
         return faker.text()
+
+    @staticmethod
+    def generate_random_price():
+        return random.randint(1, 500)  # Случайное целое число от 1 до 500
+
+    @staticmethod
+    def generate_random_location():
+        return random.choice(["MSK", "SPB"])  # Случайный выбор из двух вариантов

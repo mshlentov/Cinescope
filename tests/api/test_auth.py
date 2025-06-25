@@ -1,9 +1,5 @@
-import pytest
-import requests
-
 from api.api_manager import ApiManager
 from conftest import api_manager
-from constants import BASE_URL, HEADERS, REGISTER_ENDPOINT, LOGIN_ENDPOINT
 
 
 class TestAuthAPI:

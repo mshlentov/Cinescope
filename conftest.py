@@ -4,7 +4,7 @@ import pytest
 import requests
 
 from api.api_manager import ApiManager
-from constants import BASE_URL, REGISTER_ENDPOINT, LOGIN_ENDPOINT
+from constants import BASE_URL, REGISTER_ENDPOINT, ADMIN_CRED
 from custom_requester.custom_requester import CustomRequester
 from utils.data_generator import DataGenerator
 
@@ -76,13 +76,23 @@ def test_movie():
     """
     random_name = DataGenerator.generate_random_movie_name()
     random_desc = DataGenerator.generate_random_movie_name()
+    random_price = DataGenerator.generate_random_price()
+    random_location = DataGenerator.generate_random_location()
 
     return {
         "name": random_name,
         "imageUrl": "https://static.rustore.ru/apk/2063541706/content/ICON/b35776fc-d52d-4294-a521-ac41f44d84bb.png",
-        "price": 200,
+        "price": random_price,
         "description": random_desc,
-        "location": "SPB",
+        "location": random_location,
         "published": True,
         "genreId": 2
     }
+
+@pytest.fixture()
+def authenticate_admin(api_manager):
+    return api_manager.auth_api.authenticate(ADMIN_CRED)
+
+@pytest.fixture()
+def create_test_movie(api_manager, test_movie):
+    yield api_manager.movies_api.create_movie(test_movie)
