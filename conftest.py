@@ -1,10 +1,11 @@
+import os
 
 from faker import Faker
 import pytest
 import requests
 
 from api.api_manager import ApiManager
-from constants import BASE_URL, REGISTER_ENDPOINT, ADMIN_CRED, Roles
+from constants import BASE_URL, REGISTER_ENDPOINT, Roles
 from custom_requester.custom_requester import CustomRequester
 from entities.user import User
 from resources.user_creds import SuperAdminCreds
@@ -93,7 +94,7 @@ def test_movie():
 
 @pytest.fixture()
 def authenticate_admin(api_manager):
-    return api_manager.auth_api.authenticate(ADMIN_CRED)
+    return api_manager.auth_api.authenticate([SuperAdminCreds.USERNAME, SuperAdminCreds.PASSWORD])
 
 @pytest.fixture()
 def create_test_movie(test_movie, super_admin):
