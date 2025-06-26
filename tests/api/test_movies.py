@@ -3,12 +3,12 @@ from conftest import api_manager
 
 class TestMoviesAPI:
     # Тесты для GET /movies
-    def test_get_movies(self, authenticate_admin, api_manager: ApiManager,):
+    def test_get_movies(self, common_user):
         """
         Тест на получение списка фильмов.
         """
 
-        response = api_manager.movies_api.get_movies()
+        response = common_user.api.movies_api.get_movies()
         response_data = response.json()
 
         movies_list = response_data["movies"]  # Сохраняем полученный список фильмов в переменную
@@ -27,12 +27,12 @@ class TestMoviesAPI:
             for movie in movies_list:
                 assert movie["published"] == True
 
-    def test_get_movies_filter_locations(self, authenticate_admin, api_manager: ApiManager):
+    def test_get_movies_filter_locations(self, common_user):
         """
         Тест на получение списка фильмов только из СПБ используя фильтры.
         """
 
-        response = api_manager.movies_api.get_movies(params={"locations": "SPB"})
+        response = common_user.api.movies_api.get_movies(params={"locations": "SPB"})
         response_data = response.json()
 
         movies_list = response_data["movies"] # Сохраняем полученный список фильмов в переменную
@@ -43,12 +43,12 @@ class TestMoviesAPI:
         for movie in movies_list:
             assert movie["location"] == "SPB"
 
-    def test_get_movies_filter_locations_negative(self, authenticate_admin, api_manager: ApiManager):
+    def test_get_movies_filter_locations_negative(self, common_user):
         """
         Негативный тест на получение списка фильмов только из СПБ используя фильтры.
         """
 
-        response = api_manager.movies_api.get_movies(params={"locations": "EKB"}, expected_status=400)
+        response = common_user.api.movies_api.get_movies(params={"locations": "EKB"}, expected_status=400)
         response_data = response.json()
 
         # Проверки
@@ -56,7 +56,7 @@ class TestMoviesAPI:
 
 
     # Тесты для POST /movies
-    def test_create_movie_positive(self, create_test_movie, test_movie, authenticate_admin, api_manager: ApiManager):
+    def test_create_movie_positive(self, create_test_movie, test_movie, super_admin):
         """
         Позитивный тест создания фильма
         """
@@ -70,19 +70,19 @@ class TestMoviesAPI:
         assert response_data["location"] == test_movie["location"]
 
         # Удаление созданного фильма
-        api_manager.movies_api.delete_movie(response_data["id"])
+        super_admin.api.movies_api.delete_movie(response_data["id"])
 
-    def test_create_movie_duplicate_negative(self, authenticate_admin, test_movie, api_manager: ApiManager):
+    def test_create_movie_duplicate_negative(self, super_admin, test_movie):
         """
         Негативный тест: создание фильма с дублирующимся названием
         """
 
         # Создаем первый фильм
-        create_response = api_manager.movies_api.create_movie(test_movie)
+        create_response = super_admin.api.movies_api.create_movie(test_movie)
         movie_id = create_response.json()["id"]
 
         # Пытаемся создать дубликат
-        response = api_manager.movies_api.create_movie(test_movie, expected_status=409)
+        response = super_admin.api.movies_api.create_movie(test_movie, expected_status=409)
         response_data = response.json()
 
         # Проверки
@@ -90,9 +90,9 @@ class TestMoviesAPI:
         assert response_data["message"] == "Фильм с таким названием уже существует"
 
         # Удаление созданного фильма
-        api_manager.movies_api.delete_movie(movie_id)
+        super_admin.api.movies_api.delete_movie(movie_id)
 
-    def test_create_movie_missing_required_negative(self, authenticate_admin, api_manager: ApiManager):
+    def test_create_movie_missing_required_negative(self, super_admin):
         """
         Негативный тест: отсутствие обязательных полей
         """
@@ -102,7 +102,7 @@ class TestMoviesAPI:
             "location": "MSK"
         }
 
-        response = api_manager.movies_api.create_movie(invalid_movie_data, expected_status=400)
+        response = super_admin.api.movies_api.create_movie(invalid_movie_data, expected_status=400)
         response_data = response.json()
 
         # Проверки
@@ -124,7 +124,7 @@ class TestMoviesAPI:
         assert sorted(response_data["message"]) == sorted(expected_messages)
 
     # Тесты для GET /movies/{id}
-    def test_get_movie_by_id_positive(self, create_test_movie, authenticate_admin, test_movie, api_manager: ApiManager):
+    def test_get_movie_by_id_positive(self, create_test_movie, common_user, super_admin, test_movie):
         """
         Позитивный тест получения фильма по ID
         """
@@ -133,22 +133,22 @@ class TestMoviesAPI:
         movie_id = create_test_movie.json()["id"]
 
         # Получаем фильм по ID
-        response = api_manager.movies_api.get_movie_by_id(movie_id)
+        response = common_user.api.movies_api.get_movie_by_id(movie_id)
         response_data = response.json()
 
         # Проверки
         assert response_data["id"] == movie_id
 
         # Удаление созданного фильма
-        api_manager.movies_api.delete_movie(movie_id)
+        super_admin.api.movies_api.delete_movie(movie_id)
 
-    def test_get_movie_by_id_not_found_negative(self, authenticate_admin, api_manager: ApiManager):
+    def test_get_movie_by_id_not_found_negative(self, common_user):
         """
         Негативный тест: получение несуществующего фильма
         """
 
         non_existent_id = 99999
-        response = api_manager.movies_api.get_movie_by_id(non_existent_id, expected_status=404)
+        response = common_user.api.movies_api.get_movie_by_id(non_existent_id, expected_status=404)
         response_data = response.json()
 
         # Проверки
@@ -156,7 +156,7 @@ class TestMoviesAPI:
         assert "не найден" in response_data["message"]
 
     # Тесты для DELETE /movies/{id}
-    def test_delete_movie_positive(self, create_test_movie, test_movie, authenticate_admin, api_manager: ApiManager):
+    def test_delete_movie_positive(self, create_test_movie, test_movie, super_admin):
         """
         Позитивный тест удаления фильма
         """
@@ -165,18 +165,18 @@ class TestMoviesAPI:
         movie_id = create_test_movie.json()["id"]
 
         # Удаляем фильм
-        api_manager.movies_api.delete_movie(movie_id)
+        super_admin.api.movies_api.delete_movie(movie_id)
 
         # Проверяем, что фильм удален
-        api_manager.movies_api.get_movie_by_id(movie_id, expected_status=404)
+        super_admin.api.movies_api.get_movie_by_id(movie_id, expected_status=404)
 
-    def test_delete_movie_not_found_negative(self, authenticate_admin, api_manager: ApiManager):
+    def test_delete_movie_not_found_negative(self, super_admin):
         """
         Негативный тест: удаление несуществующего фильма
         """
 
         non_existent_id = 99999
-        response = api_manager.movies_api.delete_movie(non_existent_id, expected_status=404)
+        response = super_admin.api.movies_api.delete_movie(non_existent_id, expected_status=404)
         response_data = response.json()
 
         # Проверки
@@ -184,7 +184,7 @@ class TestMoviesAPI:
         assert "не найден" in response_data["message"]
 
     # Тесты для PATCH /movies/{id}
-    def test_update_movie_positive(self, create_test_movie, authenticate_admin, test_movie, api_manager: ApiManager):
+    def test_update_movie_positive(self, create_test_movie, super_admin, test_movie):
         """
         Позитивный тест обновления фильма
         """
@@ -198,7 +198,7 @@ class TestMoviesAPI:
             "price": 400,
             "published": False
         }
-        patch_response = api_manager.movies_api.update_movie(movie_id, update_data)
+        patch_response = super_admin.api.movies_api.update_movie(movie_id, update_data)
         patch_data = patch_response.json()
 
         # Проверки
@@ -207,9 +207,9 @@ class TestMoviesAPI:
         assert patch_data["published"] == update_data["published"]
 
         # Удаление созданного фильма
-        api_manager.movies_api.delete_movie(movie_id)
+        super_admin.api.movies_api.delete_movie(movie_id)
 
-    def test_update_movie_invalid_data_negative(self, create_test_movie, authenticate_admin, test_movie, api_manager: ApiManager):
+    def test_update_movie_invalid_data_negative(self, create_test_movie, super_admin, test_movie):
         """
         Негативный тест: обновление с невалидными данными
         """
@@ -223,7 +223,7 @@ class TestMoviesAPI:
             "location": "INVALID"  # Недопустимая локация
         }
 
-        response = api_manager.movies_api.update_movie(movie_id, invalid_data, expected_status=400)
+        response = super_admin.api.movies_api.update_movie(movie_id, invalid_data, expected_status=400)
         response_data = response.json()
 
         assert response.status_code == 400
@@ -232,9 +232,9 @@ class TestMoviesAPI:
         assert "location" in response_data["message"][1].lower()
 
         # Удаление созданного фильма
-        api_manager.movies_api.delete_movie(movie_id)
+        super_admin.api.movies_api.delete_movie(movie_id)
 
-    def test_update_movie_not_found_negative(self, authenticate_admin, api_manager: ApiManager):
+    def test_update_movie_not_found_negative(self, super_admin):
         """
         Негативный тест: обновление несуществующего фильма
         """
@@ -242,7 +242,7 @@ class TestMoviesAPI:
         non_existent_id = 99999
         update_data = {"name": "Новое название"}
 
-        response = api_manager.movies_api.update_movie(non_existent_id, update_data, expected_status=404)
+        response = super_admin.api.movies_api.update_movie(non_existent_id, update_data, expected_status=404)
         response_data = response.json()
 
         assert response.status_code == 404
