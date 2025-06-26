@@ -1,14 +1,22 @@
-from api.api_manager import ApiManager
-from conftest import api_manager
+import pytest
 
 class TestMoviesAPI:
     # Тесты для GET /movies
-    def test_get_movies(self, common_user):
+    @pytest.mark.parametrize("min_price,max_price,locations,genre_id", [
+        (1, 1000, "MSK", 1),
+        (100, 500, "SPB", 2)
+    ])
+    def test_get_movies(self, common_user, min_price, max_price, locations, genre_id):
         """
         Тест на получение списка фильмов.
         """
 
-        response = common_user.api.movies_api.get_movies()
+        response = common_user.api.movies_api.get_movies(params={
+            "locations": locations,
+            "minPrice": min_price,
+            "maxPrice": max_price,
+            "genreId": genre_id
+        })
         response_data = response.json()
 
         movies_list = response_data["movies"]  # Сохраняем полученный список фильмов в переменную
@@ -20,12 +28,10 @@ class TestMoviesAPI:
         assert "pageSize" in response_data
         assert "pageCount" in response_data
         assert response_data["pageSize"] == 10
+        assert movies_list
 
-        if not movies_list:
-            raise ValueError("Список фильмов пустой!")
-        else:
-            for movie in movies_list:
-                assert movie["published"] == True
+        for movie in movies_list:
+            assert movie["published"] == True
 
     def test_get_movies_filter_locations(self, common_user):
         """
