@@ -8,6 +8,7 @@ from api.api_manager import ApiManager
 from constants import BASE_URL, REGISTER_ENDPOINT, Roles
 from custom_requester.custom_requester import CustomRequester
 from entities.user import User
+from models.test_pydantic import PydenticUser
 from resources.user_creds import SuperAdminCreds
 from utils.data_generator import DataGenerator
 
@@ -22,13 +23,16 @@ def test_user():
     random_name = DataGenerator.generate_random_name()
     random_password = DataGenerator.generate_random_password()
 
-    return {
+    user_data = {
         "email": random_email,
         "fullName": random_name,
         "password": random_password,
         "passwordRepeat": random_password,
         "roles": [Roles.USER.value]
     }
+
+    PydenticUser(**user_data)
+    return user_data
 
 @pytest.fixture(scope="function")
 def registered_user(requester, test_user):
@@ -151,3 +155,15 @@ def common_user(user_session, super_admin, creation_user_data):
     super_admin.api.user_api.create_user(creation_user_data)
     common_user.api.auth_api.authenticate(common_user.creds)
     return common_user
+
+@pytest.fixture
+def registration_user_data():
+    random_password = DataGenerator.generate_random_password()
+
+    return {
+        "email": DataGenerator.generate_random_email(),
+        "fullName": DataGenerator.generate_random_name(),
+        "password": random_password,
+        "passwordRepeat": random_password,
+        "roles": [Roles.USER.value]
+    }

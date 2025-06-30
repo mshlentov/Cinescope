@@ -2,6 +2,7 @@ import pytest
 
 class TestMoviesAPI:
     # Тесты для GET /movies
+    @pytest.mark.slow
     @pytest.mark.parametrize("min_price,max_price,locations,genre_id", [
         (1, 1000, "MSK", 1),
         (100, 500, "SPB", 2)
@@ -33,6 +34,7 @@ class TestMoviesAPI:
         for movie in movies_list:
             assert movie["published"] == True
 
+    @pytest.mark.slow
     def test_get_movies_filter_locations(self, common_user):
         """
         Тест на получение списка фильмов только из СПБ используя фильтры.
@@ -130,6 +132,7 @@ class TestMoviesAPI:
         assert sorted(response_data["message"]) == sorted(expected_messages)
 
     # Тесты для GET /movies/{id}
+    @pytest.mark.slow
     def test_get_movie_by_id_positive(self, create_test_movie, common_user, super_admin, test_movie):
         """
         Позитивный тест получения фильма по ID
@@ -148,6 +151,7 @@ class TestMoviesAPI:
         # Удаление созданного фильма
         super_admin.api.movies_api.delete_movie(movie_id)
 
+    @pytest.mark.slow
     def test_get_movie_by_id_not_found_negative(self, common_user):
         """
         Негативный тест: получение несуществующего фильма

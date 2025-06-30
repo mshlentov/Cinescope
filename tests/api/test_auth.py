@@ -1,5 +1,8 @@
+import pytest
+
 from api.api_manager import ApiManager
 from conftest import api_manager
+from models.test_pydantic import RegisterUserResponse, AuthResponse
 
 
 class TestAuthAPI:
@@ -8,13 +11,10 @@ class TestAuthAPI:
         Тест на регистрацию пользователя.
         """
         response = api_manager.auth_api.register_user(test_user)
-        response_data = response.json()
+        register_user_response = RegisterUserResponse(**response.json())
 
         # Проверки
-        assert response_data["email"] == test_user["email"], "Email не совпадает"
-        assert "id" in response_data, "ID пользователя отсутствует в ответе"
-        assert "roles" in response_data, "Роли пользователя отсутствуют в ответе"
-        assert "USER" in response_data["roles"], "Роль USER должна быть у пользователя"
+        assert register_user_response.email == test_user["email"], "Email не совпадает"
 
     def test_register_and_login_user(self, api_manager: ApiManager, registered_user):
         """
@@ -26,11 +26,10 @@ class TestAuthAPI:
         }
 
         response = api_manager.auth_api.login_user(login_data)
-        response_data = response.json()
+        login_user_response = AuthResponse(**response.json())
 
         # Проверки
-        assert "accessToken" in response_data, "Токен доступа отсутствует в ответе"
-        assert response_data["user"]["email"] == registered_user["email"], "Email не совпадает"
+        assert login_user_response.user.email == login_data["email"]
 
     def test_negative_login_empty(self, requester, api_manager):
 
