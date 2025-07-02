@@ -1,4 +1,8 @@
+import datetime
 import os
+import uuid
+
+from dotenv import load_dotenv
 
 from faker import Faker
 import pytest
@@ -7,10 +11,13 @@ import requests
 from api.api_manager import ApiManager
 from constants import BASE_URL, REGISTER_ENDPOINT, Roles
 from custom_requester.custom_requester import CustomRequester
+from db_requester.models import UserDBModel
 from entities.user import User
 from models.test_pydantic import PydenticUser
 from resources.user_creds import SuperAdminCreds
 from utils.data_generator import DataGenerator
+from sqlalchemy import create_engine, Column, String, Boolean, DateTime, text
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 faker = Faker()
 
@@ -167,3 +174,43 @@ def registration_user_data():
         "passwordRepeat": random_password,
         "roles": [Roles.USER.value]
     }
+
+USERNAME = os.getenv("DB_USER")
+PASSWORD = os.getenv("PASSWORD")
+HOST = os.getenv("HOST")
+PORT = os.getenv("PORT")
+DATABASE_NAME = os.getenv("DATABASE_NAME")
+
+engine = create_engine(f"postgresql+psycopg2://{USERNAME}:{PASSWORD}@{HOST}:{PORT}/{DATABASE_NAME}") # Создаем движок (engine) для подключения к базе данных
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine) # Создаем фабрику сессий
+
+@pytest.fixture(scope="module")
+def db_session():
+    """
+    Фикстура с областью видимости module.
+    Тестовые данные создаются один раз для всех тестов в модуле.
+    """
+    session = SessionLocal()
+
+    # Создаем тестовые данные
+    test_user = UserDBModel(
+        id = DataGenerator.generate_random_id(),
+        email = DataGenerator.generate_random_email(),
+        full_name = DataGenerator.generate_random_name(),
+        password = DataGenerator.generate_random_password(),
+        created_at = datetime.datetime.now(),
+        updated_at = datetime.datetime.now(),
+        verified = False,
+        banned = False,
+        roles = "{USER}"
+    )
+    session.add(test_user) #добавляем обьект в базу данных
+    session.commit() #сохраняем изменения для всех остальных подключений
+
+    yield session # можете запустить тесты в дебаг режиме и поставить тут брекпойнт
+                  # зайдите в базу и убедитесь что нывй обьект был создан
+
+	#код ниже выполнится после всех запущеных тестов
+    session.delete(test_user) # Удаляем тестовые данные
+    session.commit() # сохраняем изменения для всех остальных подключений
+    session.close() #завершем сессию (отключаемся от базы данных)

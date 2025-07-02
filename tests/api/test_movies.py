@@ -1,4 +1,11 @@
+import datetime
+from _pydatetime import timezone
+
 import pytest
+from requests import Session
+
+from db_requester.models import MovieDBModel
+
 
 class TestMoviesAPI:
     # Тесты для GET /movies
@@ -166,19 +173,29 @@ class TestMoviesAPI:
         assert "не найден" in response_data["message"]
 
     # Тесты для DELETE /movies/{id}
-    def test_delete_movie_positive(self, create_test_movie, test_movie, super_admin):
+    def test_delete_movie_positive(self, create_test_movie, test_movie, super_admin, db_session):
         """
         Позитивный тест удаления фильма
         """
 
         # Создаем фильм для теста
-        movie_id = create_test_movie.json()["id"]
+        response = create_test_movie.json()
+        movie_id = response["id"]
+        movie_name = response["name"]
+
+        # проверяем после вызова api_manager.movies_api.create_movie в базе появился наш фильм
+        movies_from_db = db_session.query(MovieDBModel).filter(MovieDBModel.name == movie_name)
+        assert movies_from_db.count() == 1, "В базе уже присутствует фильм с таким названием"
 
         # Удаляем фильм
         super_admin.api.movies_api.delete_movie(movie_id)
 
         # Проверяем, что фильм удален
         super_admin.api.movies_api.get_movie_by_id(movie_id, expected_status=404)
+
+        # проверяем что в конце тестирования фильма с таким названием действительно нет в базе
+        movies_from_db = db_session.query(MovieDBModel).filter(MovieDBModel.name == movie_name)
+        assert movies_from_db.count() == 0, "Фильм небыл удален из базы!"
 
     def test_delete_movie_not_found_negative(self, super_admin):
         """

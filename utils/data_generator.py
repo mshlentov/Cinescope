@@ -1,5 +1,7 @@
 import random
 import string
+import uuid
+
 from faker import Faker
 
 faker = Faker()
@@ -16,6 +18,10 @@ class DataGenerator:
     @staticmethod
     def generate_random_name():
         return f"{faker.first_name()} {faker.last_name()}"
+
+    @staticmethod
+    def generate_random_id():
+        return f"{uuid.uuid1()}"
 
 
     @staticmethod
@@ -58,3 +64,7 @@ class DataGenerator:
     @staticmethod
     def generate_random_location():
         return random.choice(["MSK", "SPB"])  # Случайный выбор из двух вариантов
+
+    @classmethod
+    def generate_random_int(cls, b):
+        return random.randint(1, b)
