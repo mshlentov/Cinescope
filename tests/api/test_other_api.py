@@ -105,3 +105,65 @@ def test_delete_movie_positive(create_test_movie, super_admin, db_session):
     # проверяем что в конце тестирования фильма с таким названием действительно нет в базе
     movies_from_db = db_session.query(MovieDBModel).filter(MovieDBModel.id == movie_id)
     assert movies_from_db.count() == 0, "Фильм не был удален из базы!"
+
+
+# Шапка страницы
+        def go_to_home_page(self):
+            """Переход на главную страницу."""
+            self.page.click(self.home_button)
+            self.page.wait_for_url("https://dev-cinescope.coconutqa.ru/")  # Ожидание загрузки главной страницы
+
+        def go_to_all_movies(self):
+            """Переход на страницу 'Все фильмы'."""
+            self.page.click(self.all_movies_button)
+            self.page.wait_for_url("https://dev-cinescope.coconutqa.ru/movies")  # Ожидание загрузки страницы
+
+        # Тело страницы
+        def open(self):
+            """Переход на страницу регистрации."""
+            self.page.goto(self.url)
+
+        def enter_full_name(self, full_name: str):
+            """Ввод full_name"""
+            self.page.fill(self.full_name_input, full_name)
+
+        def enter_email(self, email: str):
+            """Ввод email"""
+            self.page.fill(self.email_input, email)
+
+        def enter_password(self, password: str):
+            """Ввод пароля"""
+            self.page.fill(self.password_input, password)
+
+        def enter_repeat_password(self, password: str):
+            """Ввод подтверждения пароля"""
+            self.page.fill(self.repeat_password_input, password)
+
+        def click_register_button(self):
+            """Клик по кнопке регистрации"""
+            self.page.click(self.register_button)
+
+        # Вспомогательные action методы
+        def register(self, full_name: str, email: str, password: str, confirm_password: str):
+            """Полный процесс регистрации."""
+            self.enter_full_name(full_name)
+            self.enter_email(email)
+            self.enter_password(password)
+            self.enter_repeat_password(confirm_password)
+            self.click_register_button()
+
+        def wait_redirect_to_login_page(self):
+            """Переход на страницу login."""
+            self.page.wait_for_url("https://dev-cinescope.coconutqa.ru/login")  # Ожидание загрузки страницы login
+            assert self.page.url == "https://dev-cinescope.coconutqa.ru/login", "Редирект на домашнюю старницу не произошел"
+
+        def check_allert(self):
+            """Проверка всплывающего сообщения после редиректа"""
+            # Проверка появления алерта с текстом "Подтвердите свою почту"
+            notification_locator = self.page.get_by_text("Подтвердите свою почту")
+            notification_locator.wait_for(state="visible")  # Ждем появления элемента
+
+            assert notification_locator.is_visible(), "Уведомление не появилось"
+            # Ожидание исчезновения алерта
+            notification_locator.wait_for(state="hidden")  # Ждем, пока алерт исчезнет
+            assert notification_locator.is_visible() == False, "Уведомление исчезло"
